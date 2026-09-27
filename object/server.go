@@ -71,6 +71,11 @@ func (s *Server) IsConfigured() bool {
 	return s.Url != "" || s.Command != ""
 }
 
+// IsStdio reports whether connecting to the server launches a local command on this host.
+func (s *Server) IsStdio() bool {
+	return s != nil && s.Command != "" && s.McpConfig().Type == "stdio"
+}
+
 // McpConfig renders the server as a transport-agnostic mcp.ServerConfig.
 // Env means process environment for stdio servers and HTTP headers for
 // URL-based ones, which is why Token is folded in only for the latter.

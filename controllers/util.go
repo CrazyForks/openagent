@@ -125,6 +125,17 @@ func (c *ApiController) RequireAdmin() bool {
 	return true
 }
 
+// RequireGlobalAdmin rejects store-level admins, which the authz filter otherwise lets through
+// as admins. Use it for operations that affect the whole server or can run code on the host.
+func (c *ApiController) RequireGlobalAdmin() bool {
+	if !c.IsGlobalAdmin() {
+		c.ResponseError(c.T("auth:this operation requires admin privilege"))
+		return false
+	}
+
+	return true
+}
+
 func (c *ApiController) IsAdmin() bool {
 	user := c.GetSessionUser()
 	return util.IsAdmin(user)

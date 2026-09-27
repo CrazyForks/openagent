@@ -26,6 +26,18 @@ import (
 	"github.com/the-open-agent/openagent/util"
 )
 
+// requireStoreAdminOwnership limits store-level admins to the stores they own.
+func (c *ApiController) requireStoreAdminOwnership(storeOwner string) bool {
+	if c.IsGlobalAdmin() || !c.IsStoreAdmin() {
+		return true
+	}
+	if storeOwner != c.GetSessionUsername() {
+		c.ResponseError(c.T("auth:Unauthorized operation"))
+		return false
+	}
+	return true
+}
+
 // GetHubStores
 // @Title GetHubStores
 // @Tag Store API
@@ -229,6 +241,9 @@ func (c *ApiController) UpdateStore() {
 		c.ResponseError(fmt.Sprintf("store: %s not found", id))
 		return
 	}
+	if !c.requireStoreAdminOwnership(oldStore.Owner) {
+		return
+	}
 
 	if store.ExternalApiKey == "***" {
 		store.ExternalApiKey = oldStore.ExternalApiKey
@@ -349,6 +364,10 @@ func (c *ApiController) AddStore() {
 		return
 	}
 
+	if !c.IsGlobalAdmin() && c.IsStoreAdmin() {
+		store.Owner = c.GetSessionUsername()
+	}
+
 	err = object.SyncDefaultProvidersToStore(&store)
 	if err != nil {
 		c.ResponseError(err.Error())
@@ -402,6 +421,10 @@ func (c *ApiController) DeleteStore() {
 	err := json.Unmarshal(c.Ctx.Input.RequestBody, &store)
 	if err != nil {
 		c.ResponseError(err.Error())
+		return
+	}
+
+	if !c.requireStoreAdminOwnership(store.Owner) {
 		return
 	}
 
@@ -480,6 +503,10 @@ func (c *ApiController) RefreshStoreVectors() {
 	err := json.Unmarshal(c.Ctx.Input.RequestBody, &store)
 	if err != nil {
 		c.ResponseError(err.Error())
+		return
+	}
+
+	if !c.requireStoreAdminOwnership(store.Owner) {
 		return
 	}
 

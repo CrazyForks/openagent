@@ -61,8 +61,8 @@ func (c *ApiController) GetMessageAnswer() {
 	c.Ctx.ResponseWriter.Header().Set("Connection", "keep-alive")
 
 	// Any user can point a chat at any store, so tools that run commands or touch the local
-	// machine are only enabled for admins, never merely for being signed in.
-	job := messageAnswerJobs.getOrStart(id, c.Ctx.Request.Host, c.GetAcceptLanguage(), signedIn, c.IsAdmin())
+	// machine are only enabled for the global admin, never for store admins or signed-in users.
+	job := messageAnswerJobs.getOrStart(id, c.Ctx.Request.Host, c.GetAcceptLanguage(), signedIn, c.IsGlobalAdmin())
 	streamMessageAnswerJob(c.Ctx.ResponseWriter, c.Ctx.Request, job)
 }
 
@@ -96,7 +96,7 @@ func (c *ApiController) CancelMessageAnswer() {
 
 func (c *ApiController) generateMessageAnswer(id string, responseWriter http.ResponseWriter, host string) {
 	_, signedIn := c.CheckSignedIn()
-	generateMessageAnswer(id, responseWriter, host, c.GetAcceptLanguage(), signedIn, c.IsAdmin(), c.ResponseError)
+	generateMessageAnswer(id, responseWriter, host, c.GetAcceptLanguage(), signedIn, c.IsGlobalAdmin(), c.ResponseError)
 }
 
 func streamMessageAnswerJob(responseWriter http.ResponseWriter, request *http.Request, job *messageAnswerJob) {
@@ -644,8 +644,18 @@ func (c *ApiController) GetAnswer() {
 	video := c.Input().Get("video")
 	tool := c.Input().Get("tool")
 
-	if tool != "" && !c.RequireAdmin() {
-		return
+	if tool != "" {
+		if !c.RequireAdmin() {
+			return
+		}
+		t, err := object.GetTool(util.GetIdFromOwnerAndName("admin", tool))
+		if err != nil {
+			c.ResponseError(err.Error())
+			return
+		}
+		if !c.requireHighRiskToolPermission(t) {
+			return
+		}
 	}
 
 	if question == "" {

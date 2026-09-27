@@ -68,6 +68,7 @@
     "No permission": "No permission",
     "No records to add": "No records to add",
     "No sessions to delete": "No sessions to delete",
+    "Only the global admin can configure tools or MCP servers that run commands on the host": "Only the global admin can configure tools or MCP servers that run commands on the host",
     "You can only access data from your assigned store": "You can only access data from your assigned store",
     "You can only view your own chats": "You can only view your own chats",
     "You can only view your own messages": "You can only view your own messages"
