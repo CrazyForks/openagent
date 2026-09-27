@@ -29,6 +29,9 @@ import (
 	"github.com/the-open-agent/openagent/util"
 )
 
+// maxListSize caps the rows returned by list APIs that are called without pagination.
+const maxListSize = 1000
+
 type Response struct {
 	Status string      `json:"status"`
 	Msg    string      `json:"msg"`

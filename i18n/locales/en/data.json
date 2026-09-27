@@ -18,6 +18,7 @@
     "Invalid username or password": "Invalid username or password",
     "Please sign in first": "Please sign in first",
     "Sign in is unavailable": "Sign in is unavailable",
+    "Too many uploads, please try again later": "Too many uploads, please try again later",
     "Unauthorized operation": "Unauthorized operation",
     "this operation requires admin privilege": "this operation requires admin privilege"
   },
@@ -210,7 +211,8 @@
     "Only image files (PNG, JPEG, GIF, WebP, BMP, ICO) can be uploaded": "Only image files (PNG, JPEG, GIF, WebP, BMP, ICO) can be uploaded",
     "The file is too large, the maximum size is %d MB": "The file is too large, the maximum size is %d MB",
     "The resource: %s is not found": "The resource: %s is not found",
-    "Unsupported resource category: %s": "Unsupported resource category: %s"
+    "Unsupported resource category: %s": "Unsupported resource category: %s",
+    "Your uploaded files exceed the quota of %d MB, please delete some files first": "Your uploaded files exceed the quota of %d MB, please delete some files first"
   },
   "storage": {
     "Casdoor is not configured or not reachable": "Casdoor is not configured or not reachable",

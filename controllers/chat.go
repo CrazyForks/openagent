@@ -165,9 +165,9 @@ func (c *ApiController) GetChats() {
 	var chats []*object.Chat
 	var err error
 	if field == "user" {
-		chats, err = object.GetChats("admin", storeName, value)
+		chats, err = object.GetLatestChats("admin", storeName, value, maxListSize)
 	} else {
-		chats, err = object.GetChats("admin", storeName, user)
+		chats, err = object.GetLatestChats("admin", storeName, user, maxListSize)
 	}
 	if err != nil {
 		c.ResponseError(err.Error())

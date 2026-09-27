@@ -192,7 +192,10 @@ func (c *ApiController) signinWithPassword() {
 		return
 	}
 
-	c.SetSessionClaims(claims)
+	if err = c.startUserSession(claims); err != nil {
+		c.ResponseError(err.Error())
+		return
+	}
 	userId := util.GetIdFromOwnerAndName(claims.User.Owner, claims.User.Name)
 	c.Ctx.Input.SetParam("recordUserId", userId)
 

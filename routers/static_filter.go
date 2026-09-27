@@ -84,6 +84,17 @@ func StaticFilter(ctx *context.Context) {
 		ctx.Output.Header(headerAllowHeaders, "Content-Type, Authorization")
 		ctx.Output.Header(headerAllowCredentials, "true")
 
+		if providerName, key, ok := object.ParseStorageObjectUrlPath(urlPath); ok {
+			serveStorageObject(ctx, providerName, key)
+			return
+		}
+
+		// Legacy URLs carry a file path instead of a signed object key, so only signed-in users may use them.
+		if GetSessionUser(ctx) == nil {
+			http.NotFound(ctx.ResponseWriter, ctx.Request)
+			return
+		}
+
 		if runtime.GOOS == "windows" {
 			urlPath = strings.TrimPrefix(urlPath, "/storage/")
 		} else {
@@ -156,6 +167,25 @@ func setStorageFileSecurityHeaders(ctx *context.Context, path string) {
 	if activeStorageFileExts[strings.ToLower(filepath.Ext(path))] {
 		ctx.Output.Header("Content-Security-Policy", "sandbox")
 	}
+}
+
+func serveStorageObject(ctx *context.Context, providerName string, key string) {
+	if !object.IsValidStorageObjectSignature(providerName, key, ctx.Input.Query("sig")) {
+		http.NotFound(ctx.ResponseWriter, ctx.Request)
+		return
+	}
+
+	path, err := object.GetLocalStorageObjectPath(providerName, key)
+	if err != nil {
+		logs.Error("GetLocalStorageObjectPath() error: %s", err.Error())
+	}
+	if path == "" || !isServableStorageFile(path) {
+		http.NotFound(ctx.ResponseWriter, ctx.Request)
+		return
+	}
+
+	setStorageFileSecurityHeaders(ctx, path)
+	makeGzipResponse(ctx.ResponseWriter, ctx.Request, path)
 }
 
 // isServableStorageFile only allows /storage to serve regular files that live inside a

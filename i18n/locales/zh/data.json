@@ -18,6 +18,7 @@
     "Invalid username or password": "用户名或密码错误",
     "Please sign in first": "请先登录",
     "Sign in is unavailable": "登录不可用",
+    "Too many uploads, please try again later": "上传过于频繁，请稍后再试",
     "Unauthorized operation": "未授权的操作",
     "this operation requires admin privilege": "此操作需要管理员权限"
   },
@@ -210,7 +211,8 @@
     "Only image files (PNG, JPEG, GIF, WebP, BMP, ICO) can be uploaded": "仅允许上传图片文件（PNG、JPEG、GIF、WebP、BMP、ICO）",
     "The file is too large, the maximum size is %d MB": "文件过大，最大允许 %d MB",
     "The resource: %s is not found": "未找到资源：%s",
-    "Unsupported resource category: %s": "不支持的资源类别：%s"
+    "Unsupported resource category: %s": "不支持的资源类别：%s",
+    "Your uploaded files exceed the quota of %d MB, please delete some files first": "已上传文件超出 %d MB 配额，请先删除部分文件"
   },
   "storage": {
     "Casdoor is not configured or not reachable": "Casdoor 未配置或无法连接",

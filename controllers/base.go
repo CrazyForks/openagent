@@ -62,6 +62,16 @@ func (c *ApiController) SetSessionClaims(claims *auth.Claims) {
 	c.SetSession("user", *claims)
 }
 
+// startUserSession gives the signed-in user a fresh session ID and binds the session to the browser.
+func (c *ApiController) startUserSession(claims *auth.Claims) error {
+	if err := c.SessionRegenerateID(); err != nil {
+		return err
+	}
+	c.SetSessionClaims(claims)
+	c.SetSession("userAgent", c.Ctx.Request.UserAgent())
+	return nil
+}
+
 func (c *ApiController) GetSessionUser() *auth.User {
 	claims := c.GetSessionClaims()
 	if claims == nil {

@@ -23,11 +23,14 @@ import (
 	"strings"
 
 	"github.com/beego/beego/utils/pagination"
+	"github.com/the-open-agent/openagent/conf"
 	"github.com/the-open-agent/openagent/object"
 	"github.com/the-open-agent/openagent/util"
 )
 
 const maxResourceUploadSize = 10 << 20
+
+const defaultResourceQuotaMb = 200
 
 var resourceCategories = map[string]bool{
 	"avatar":   true,
@@ -309,6 +312,20 @@ func (c *ApiController) UploadResource() {
 		return
 	}
 	fileSize := len(fileBytes)
+
+	quotaMb := conf.GetConfigInt("resourceQuotaMb")
+	if quotaMb <= 0 {
+		quotaMb = defaultResourceQuotaMb
+	}
+	usedSize, err := object.GetUserResourceSize(userName)
+	if err != nil {
+		c.ResponseError(err.Error())
+		return
+	}
+	if usedSize+int64(fileSize) > int64(quotaMb)<<20 {
+		c.ResponseError(fmt.Sprintf(c.T("resource:Your uploaded files exceed the quota of %d MB, please delete some files first"), quotaMb))
+		return
+	}
 
 	ext := strings.ToLower(filepath.Ext(fileName))
 	mimeType, ok := getResourceImageMimeType(ext, fileBytes)

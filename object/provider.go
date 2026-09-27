@@ -97,12 +97,12 @@ func GetMaskedProvider(provider *Provider, isMaskEnabled bool, user *auth.User) 
 	if provider.ClientSecret != "" {
 		provider.ClientSecret = "***"
 	}
+	if provider.ExternalApiKey != "" {
+		provider.ExternalApiKey = "***"
+	}
 
 	// Store-level admins manage only their own stores, so they do not get the global providers' keys.
 	if !util.IsGlobalAdmin(user) {
-		if provider.ExternalApiKey != "" {
-			provider.ExternalApiKey = "***"
-		}
 		if provider.UserKey != "" {
 			provider.UserKey = "***"
 		}
@@ -124,9 +124,6 @@ func GetMaskedProviders(providers []*Provider, isMaskEnabled bool, user *auth.Us
 
 	for _, provider := range providers {
 		provider = GetMaskedProvider(provider, isMaskEnabled, user)
-		if provider != nil && provider.ExternalApiKey != "" {
-			provider.ExternalApiKey = "***"
-		}
 	}
 	return providers
 }
@@ -332,25 +329,29 @@ func isFileSystemRoot(path string) bool {
 	return clean == "." || clean == string(filepath.Separator) || clean == filepath.VolumeName(clean)+string(filepath.Separator)
 }
 
-// IsLocalStorageFile reports whether path points inside the folder of a configured
-// "Local File System" storage provider. Only such files may be served by the /storage route.
-func IsLocalStorageFile(path string) (bool, error) {
+type localStorageRoot struct {
+	name string
+	root string
+}
+
+func getLocalStorageRoots() ([]*localStorageRoot, error) {
 	condition := &Provider{Category: "Storage", Type: "Local File System"}
 	providers := []*Provider{}
 	err := adapter.engine.Find(&providers, condition)
 	if err != nil {
-		return false, err
+		return nil, err
 	}
 
 	if providerAdapter != nil {
 		remoteProviders := []*Provider{}
 		err = providerAdapter.engine.Find(&remoteProviders, condition)
 		if err != nil {
-			return false, err
+			return nil, err
 		}
 		providers = append(providers, remoteProviders...)
 	}
 
+	res := []*localStorageRoot{}
 	for _, provider := range providers {
 		root := provider.ClientId
 		if root == "" {
@@ -362,11 +363,75 @@ func IsLocalStorageFile(path string) (bool, error) {
 		if isFileSystemRoot(root) {
 			continue
 		}
-		if storage.IsPathWithinRoot(root, path) {
+		res = append(res, &localStorageRoot{name: provider.Name, root: root})
+	}
+	return res, nil
+}
+
+// IsLocalStorageFile reports whether path points inside the folder of a configured
+// "Local File System" storage provider. Only such files may be served by the /storage route.
+func IsLocalStorageFile(path string) (bool, error) {
+	roots, err := getLocalStorageRoots()
+	if err != nil {
+		return false, err
+	}
+
+	for _, root := range roots {
+		if storage.IsPathWithinRoot(root.root, path) {
 			return true, nil
 		}
 	}
 	return false, nil
+}
+
+// GetLocalStorageObjectPath returns the file path of the object key in the named local storage provider.
+func GetLocalStorageObjectPath(providerName string, key string) (string, error) {
+	roots, err := getLocalStorageRoots()
+	if err != nil {
+		return "", err
+	}
+
+	for _, root := range roots {
+		if root.name != providerName {
+			continue
+		}
+		path := filepath.Join(root.root, filepath.FromSlash(key))
+		if !storage.IsPathWithinRoot(root.root, path) {
+			return "", nil
+		}
+		return path, nil
+	}
+	return "", nil
+}
+
+func getLocalStorageObjectKey(path string) (string, string, error) {
+	roots, err := getLocalStorageRoots()
+	if err != nil {
+		return "", "", err
+	}
+
+	absPath, err := filepath.Abs(path)
+	if err != nil {
+		return "", "", err
+	}
+	if realPath, err := filepath.EvalSymlinks(absPath); err == nil {
+		absPath = realPath
+	}
+	for _, root := range roots {
+		if !storage.IsPathWithinRoot(root.root, absPath) {
+			continue
+		}
+		absRoot, err := filepath.Abs(root.root)
+		if err != nil {
+			continue
+		}
+		key, err := filepath.Rel(absRoot, absPath)
+		if err != nil || key == "." {
+			continue
+		}
+		return root.name, filepath.ToSlash(key), nil
+	}
+	return "", "", nil
 }
 
 func (p *Provider) GetStorageProviderObj(vectorStoreId string, lang string) (storage.StorageProvider, error) {

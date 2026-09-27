@@ -48,6 +48,19 @@ var nonPublicIpNets = mustParseCidrs(
 // may be fetched even though arbitrary internal addresses may not. It is set by the object package.
 var TrustedInternalUrlChecker func(u *url.URL) bool
 
+// StorageUrlRewriter signs this server's own /storage URLs before they are fetched.
+var StorageUrlRewriter func(u *url.URL)
+
+type storageUrlTransport struct{}
+
+func (t *storageUrlTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+	if StorageUrlRewriter != nil {
+		req = req.Clone(req.Context())
+		StorageUrlRewriter(req.URL)
+	}
+	return http.DefaultTransport.RoundTrip(req)
+}
+
 var untrustedHttpClient = newUntrustedHttpClient()
 
 func mustParseCidrs(cidrs ...string) []*net.IPNet {
@@ -153,7 +166,8 @@ func GetUntrustedHttpClient(rawUrl string) (*http.Client, error) {
 
 	if isTrustedInternalUrl(u) {
 		return &http.Client{
-			Timeout: untrustedFetchTimeout,
+			Transport: &storageUrlTransport{},
+			Timeout:   untrustedFetchTimeout,
 			CheckRedirect: func(req *http.Request, via []*http.Request) error {
 				return http.ErrUseLastResponse
 			},

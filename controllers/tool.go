@@ -245,7 +245,7 @@ func (c *ApiController) TestTool() {
 		return
 	}
 
-	result, err := object.TestTool(&t, c.GetAcceptLanguage())
+	result, err := object.TestTool(&t, c.GetSessionUsername(), c.GetAcceptLanguage())
 	if err != nil {
 		c.ResponseError(err.Error())
 		return

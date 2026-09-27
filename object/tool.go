@@ -259,14 +259,14 @@ func getToolConfig(t *Tool) tool.Config {
 	}
 }
 
-func TestTool(t *Tool, lang string) (string, error) {
+func TestTool(t *Tool, user string, lang string) (string, error) {
 	if IsToolTypeDisabled(t.Type) {
 		return "", fmt.Errorf(i18n.Translate(lang, "object:the tool type: %s is disabled on this server"), t.Type)
 	}
-	return testToolWithLoader(t, lang, getTool)
+	return testToolWithLoader(t, user, lang, getTool)
 }
 
-func testToolWithLoader(t *Tool, lang string, loadTool func(owner string, name string) (*Tool, error)) (string, error) {
+func testToolWithLoader(t *Tool, user string, lang string, loadTool func(owner string, name string) (*Tool, error)) (string, error) {
 	if t.ClientSecret == "***" {
 		if strings.TrimSpace(t.Owner) == "" || strings.TrimSpace(t.Name) == "" {
 			return "", fmt.Errorf("cannot restore masked tool secret without owner and name")
@@ -313,7 +313,7 @@ func testToolWithLoader(t *Tool, lang string, loadTool func(owner string, name s
 	}
 	for _, bt := range tp.BuiltinTools() {
 		if bt.GetName() == payload.Tool {
-			foundTool = wrapSnapshotBuiltin(owner, bt)
+			foundTool = wrapSnapshotBuiltin(owner, wrapAuditedBuiltin(t.Type, user, bt))
 			break
 		}
 	}

@@ -166,6 +166,11 @@ func (c *ApiController) AddSite() {
 		return
 	}
 
+	if site.Owner == "" || site.Name == "" {
+		c.ResponseError(c.T("application:Missing required parameters"))
+		return
+	}
+
 	success, err := object.AddSite(&site)
 	if err != nil {
 		c.ResponseError(err.Error())
