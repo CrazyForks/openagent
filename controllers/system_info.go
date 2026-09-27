@@ -25,6 +25,10 @@ import (
 // @Success 200 {object} util.SystemInfo The Response object
 // @router /get-system-info [get]
 func (c *ApiController) GetSystemInfo() {
+	if !c.RequireGlobalAdmin() {
+		return
+	}
+
 	systemInfo, err := util.GetSystemInfo()
 	if err != nil {
 		c.ResponseError(err.Error())
@@ -41,6 +45,10 @@ func (c *ApiController) GetSystemInfo() {
 // @Success 200 {object} util.VersionInfo The Response object
 // @router /get-version-info [get]
 func (c *ApiController) GetVersionInfo() {
+	if !c.RequireGlobalAdmin() {
+		return
+	}
+
 	errInfo := ""
 	versionInfo, err := util.GetVersionInfo()
 	if err != nil {

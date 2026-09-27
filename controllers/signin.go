@@ -145,7 +145,7 @@ func (c *ApiController) UpdateAccount() {
 
 	user := accountUser.ToCasdoorUser()
 	c.SetSessionUser(&user)
-	c.ResponseOk(user)
+	c.ResponseOk(getSanitizedUser(user))
 }
 
 func (c *ApiController) signinWithPassword() {
@@ -207,5 +207,5 @@ func (c *ApiController) signinWithPassword() {
 		object.AddSession(session)
 	}
 
-	c.ResponseOk(claims)
+	c.ResponseOk(getSanitizedClaims(claims))
 }

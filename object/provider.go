@@ -124,6 +124,9 @@ func GetMaskedProviders(providers []*Provider, isMaskEnabled bool, user *auth.Us
 
 	for _, provider := range providers {
 		provider = GetMaskedProvider(provider, isMaskEnabled, user)
+		if provider != nil && provider.ExternalApiKey != "" {
+			provider.ExternalApiKey = "***"
+		}
 	}
 	return providers
 }
@@ -324,6 +327,11 @@ func (provider *Provider) GetId() string {
 	return fmt.Sprintf("%s/%s", provider.Owner, provider.Name)
 }
 
+func isFileSystemRoot(path string) bool {
+	clean := filepath.Clean(path)
+	return clean == "." || clean == string(filepath.Separator) || clean == filepath.VolumeName(clean)+string(filepath.Separator)
+}
+
 // IsLocalStorageFile reports whether path points inside the folder of a configured
 // "Local File System" storage provider. Only such files may be served by the /storage route.
 func IsLocalStorageFile(path string) (bool, error) {
@@ -350,6 +358,9 @@ func IsLocalStorageFile(path string) (bool, error) {
 		}
 		if realRoot, err := filepath.EvalSymlinks(root); err == nil {
 			root = realRoot
+		}
+		if isFileSystemRoot(root) {
+			continue
 		}
 		if storage.IsPathWithinRoot(root, path) {
 			return true, nil

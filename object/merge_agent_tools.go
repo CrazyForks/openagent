@@ -47,7 +47,7 @@ func buildMergedBuiltinRegistry(store *Store, user, origin, lang string) *tool.T
 	for _, tname := range toolNames {
 		id := util.GetIdFromOwnerAndName(store.Owner, tname)
 		t, err := GetTool(id)
-		if err != nil || t == nil {
+		if err != nil || t == nil || IsToolTypeDisabled(t.Type) {
 			continue
 		}
 		tp, err := tool.New(getToolConfig(t), lang)

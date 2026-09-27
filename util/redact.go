@@ -32,6 +32,10 @@ var sensitiveKeyNames = map[string]bool{
 	"userkey":    true,
 }
 
+var sensitiveQueryKeyNames = map[string]bool{
+	"code": true,
+}
+
 var sensitiveKeyNormalizer = strings.NewReplacer("_", "", "-", "")
 
 // IsSensitiveKey reports whether a field or query parameter name usually holds a credential.
@@ -110,7 +114,7 @@ func RedactSensitiveUrl(rawUrl string) string {
 
 	changed := false
 	for key, values := range query {
-		if !IsSensitiveKey(key) {
+		if !IsSensitiveKey(key) && !sensitiveQueryKeyNames[strings.ToLower(key)] {
 			continue
 		}
 		for i, value := range values {
@@ -126,4 +130,23 @@ func RedactSensitiveUrl(rawUrl string) string {
 
 	u.RawQuery = query.Encode()
 	return u.String()
+}
+
+func maskMiddle(value string, keepStart int, keepEnd int) string {
+	runes := []rune(value)
+	if len(runes) <= keepStart+keepEnd {
+		if len(runes) == 0 {
+			return ""
+		}
+		return redactedValue
+	}
+	return string(runes[:keepStart]) + strings.Repeat("*", len(runes)-keepStart-keepEnd) + string(runes[len(runes)-keepEnd:])
+}
+
+func MaskPhone(phone string) string {
+	return maskMiddle(phone, 3, 4)
+}
+
+func MaskIdCard(idCard string) string {
+	return maskMiddle(idCard, 1, 1)
 }

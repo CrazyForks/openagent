@@ -68,6 +68,7 @@ func main() {
 	controllers.InitWeixinClawPipeMonitors()
 
 	beego.SetStaticPath("/swagger", "swagger")
+	beego.InsertFilter("*", beego.BeforeStatic, routers.BodyLimitFilter)
 	beego.InsertFilter("*", beego.BeforeRouter, routers.CorsFilter)
 	beego.InsertFilter("*", beego.BeforeRouter, routers.EndpointFilter)
 	beego.InsertFilter("*", beego.BeforeRouter, routers.HstsFilter)

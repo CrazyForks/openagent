@@ -32,6 +32,10 @@ import (
 // @Success 200 {object} object.Record The Response object
 // @router /get-records [get]
 func (c *ApiController) GetRecords() {
+	if !c.RequireGlobalAdmin() {
+		return
+	}
+
 	owner := c.Input().Get("owner")
 	limit := c.Input().Get("pageSize")
 	page := c.Input().Get("p")
@@ -82,6 +86,10 @@ func (c *ApiController) GetRecords() {
 // @Success 200 {object} object.Record The Response object
 // @router /get-record [get]
 func (c *ApiController) GetRecord() {
+	if !c.RequireGlobalAdmin() {
+		return
+	}
+
 	id := c.Input().Get("id")
 
 	record, err := object.GetRecord(id, c.GetAcceptLanguage())
@@ -103,6 +111,10 @@ func (c *ApiController) GetRecord() {
 // @Success 200 {object} controllers.Response The Response object
 // @router /update-record [post]
 func (c *ApiController) UpdateRecord() {
+	if !c.RequireGlobalAdmin() {
+		return
+	}
+
 	id := c.Input().Get("id")
 
 	var record object.Record
@@ -124,6 +136,10 @@ func (c *ApiController) UpdateRecord() {
 // @Success 200 {object} controllers.Response The Response object
 // @router /add-record [post]
 func (c *ApiController) AddRecord() {
+	if !c.RequireGlobalAdmin() {
+		return
+	}
+
 	var record object.Record
 	err := json.Unmarshal(c.Ctx.Input.RequestBody, &record)
 	if err != nil {
@@ -154,6 +170,10 @@ func (c *ApiController) AddRecord() {
 // @Success 200 {object} controllers.Response The Response object
 // @router /add-records [post]
 func (c *ApiController) AddRecords() {
+	if !c.RequireGlobalAdmin() {
+		return
+	}
+
 	// Determine synchronous processing
 	var syncEnabled bool
 	syncParam := strings.ToLower(c.Input().Get("sync"))
@@ -201,6 +221,10 @@ func (c *ApiController) AddRecords() {
 // @Success 200 {object} controllers.Response The Response object
 // @router /delete-record [post]
 func (c *ApiController) DeleteRecord() {
+	if !c.RequireGlobalAdmin() {
+		return
+	}
+
 	var record object.Record
 	err := json.Unmarshal(c.Ctx.Input.RequestBody, &record)
 	if err != nil {

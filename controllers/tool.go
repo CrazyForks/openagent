@@ -16,6 +16,7 @@ package controllers
 
 import (
 	"encoding/json"
+	"fmt"
 
 	"github.com/beego/beego/utils/pagination"
 	"github.com/the-open-agent/openagent/object"
@@ -25,6 +26,12 @@ import (
 // requireHighRiskToolPermission blocks store-level admins from tools that execute commands,
 // touch the local file system or drive the local desktop/browser.
 func (c *ApiController) requireHighRiskToolPermission(tools ...*object.Tool) bool {
+	for _, t := range tools {
+		if t != nil && object.IsToolTypeDisabled(t.Type) {
+			c.ResponseError(fmt.Sprintf(c.T("controllers:The tool type: %s is disabled on this server"), t.Type))
+			return false
+		}
+	}
 	if c.IsGlobalAdmin() {
 		return true
 	}

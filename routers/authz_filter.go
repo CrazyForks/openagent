@@ -67,8 +67,10 @@ func permissionFilter(ctx *context.Context) {
 
 	var role string
 	switch {
-	case util.IsAdmin(user):
+	case util.IsGlobalAdmin(user):
 		role = "admin"
+	case util.IsStoreAdmin(user):
+		role = "store-admin"
 	case user != nil:
 		role = "user"
 	default:

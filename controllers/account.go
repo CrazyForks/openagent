@@ -143,7 +143,7 @@ func (c *ApiController) Signin() {
 		object.AddSession(session)
 	}
 
-	c.ResponseOk(claims)
+	c.ResponseOk(getSanitizedClaims(claims))
 }
 
 // Signout
@@ -402,9 +402,42 @@ func (c *ApiController) GetAccount() {
 		return
 	}
 
+	res := getSanitizedClaims(claims)
 	if !isSafePassword {
-		claims.User.Password = "#NeedToModify#"
+		res.User.Password = "#NeedToModify#"
 	}
 
-	c.ResponseOk(claims)
+	c.ResponseOk(res)
+}
+
+func getSanitizedClaims(claims *auth.Claims) *auth.Claims {
+	if claims == nil {
+		return nil
+	}
+
+	res := *claims
+	res.AccessToken = ""
+	res.User = getSanitizedUser(claims.User)
+	return &res
+}
+
+func getSanitizedUser(user auth.User) auth.User {
+	if user.Password != "#NeedToModify#" {
+		user.Password = ""
+	}
+	user.PasswordSalt = ""
+	user.PasswordType = ""
+	user.Hash = ""
+	user.PreHash = ""
+	user.AccessKey = ""
+	user.AccessSecret = ""
+	user.AccessToken = ""
+	user.OriginalToken = ""
+	user.OriginalRefreshToken = ""
+	user.TotpSecret = ""
+	user.RecoveryCodes = nil
+	user.MfaAccounts = nil
+	user.Phone = util.MaskPhone(user.Phone)
+	user.IdCard = util.MaskIdCard(user.IdCard)
+	return user
 }

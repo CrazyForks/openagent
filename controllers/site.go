@@ -98,6 +98,14 @@ func (c *ApiController) GetBuiltInSite() {
 		return
 	}
 
+	if site != nil && !c.IsGlobalAdmin() {
+		site.ParentDbName = ""
+		site.HubDbNames = ""
+		site.Socks5Proxy = ""
+		site.LogConfig = ""
+		site.IpParsingMode = ""
+	}
+
 	c.ResponseOk(site)
 }
 

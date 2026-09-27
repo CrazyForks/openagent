@@ -50,7 +50,7 @@ func (c *ApiController) GetSessions() {
 			return
 		}
 
-		c.ResponseOk(sessions)
+		c.ResponseOk(object.GetMaskedSessions(sessions))
 	} else {
 		limit := util.ParseInt(limit)
 		count, err := object.GetSessionCount(owner, field, value)
@@ -65,7 +65,7 @@ func (c *ApiController) GetSessions() {
 			return
 		}
 
-		c.ResponseOk(sessions, paginator.Nums())
+		c.ResponseOk(object.GetMaskedSessions(sessions), paginator.Nums())
 	}
 }
 
@@ -90,7 +90,7 @@ func (c *ApiController) GetSingleSession() {
 		return
 	}
 
-	c.ResponseOk(session)
+	c.ResponseOk(object.GetMaskedSession(session))
 }
 
 // UpdateSession
@@ -113,7 +113,17 @@ func (c *ApiController) UpdateSession() {
 		return
 	}
 
-	c.Data["json"] = wrapActionResponse(object.UpdateSession(util.GetIdFromOwnerAndName(session.Owner, session.Name), &session))
+	id := util.GetIdFromOwnerAndName(session.Owner, session.Name)
+	oldSession, err := object.GetSession(id)
+	if err != nil {
+		c.ResponseError(err.Error())
+		return
+	}
+	if oldSession != nil {
+		session.SessionId = oldSession.SessionId
+	}
+
+	c.Data["json"] = wrapActionResponse(object.UpdateSession(id, &session))
 	c.ServeJSON()
 }
 

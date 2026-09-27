@@ -22,6 +22,7 @@ import (
 
 	"github.com/ThinkInAIXYZ/go-mcp/protocol"
 	"github.com/the-open-agent/openagent/auth"
+	"github.com/the-open-agent/openagent/conf"
 	"github.com/the-open-agent/openagent/i18n"
 	"github.com/the-open-agent/openagent/tool"
 	"github.com/the-open-agent/openagent/util"
@@ -102,6 +103,15 @@ var highRiskToolTypes = map[string]bool{
 
 func IsHighRiskToolType(toolType string) bool {
 	return highRiskToolTypes[toolType]
+}
+
+func IsToolTypeDisabled(toolType string) bool {
+	for _, disabledType := range conf.GetStringArray("disabledToolTypes") {
+		if strings.TrimSpace(disabledType) == toolType {
+			return true
+		}
+	}
+	return false
 }
 
 // FilterOutHighRiskTools expands the "All" selection and drops every tool whose
@@ -250,6 +260,9 @@ func getToolConfig(t *Tool) tool.Config {
 }
 
 func TestTool(t *Tool, lang string) (string, error) {
+	if IsToolTypeDisabled(t.Type) {
+		return "", fmt.Errorf(i18n.Translate(lang, "object:the tool type: %s is disabled on this server"), t.Type)
+	}
 	return testToolWithLoader(t, lang, getTool)
 }
 
