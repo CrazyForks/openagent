@@ -132,6 +132,23 @@ func GetMaskedServers(servers []*Server, isMaskEnabled bool) []*Server {
 	return servers
 }
 
+// KeepsMaskedSecretWithNewEndpoint reports whether s reuses a masked ("***") token or env value of
+// oldServer while changing the server URL, which would disclose that secret to the new URL.
+func (s *Server) KeepsMaskedSecretWithNewEndpoint(oldServer *Server) bool {
+	if oldServer == nil || s.Url == oldServer.Url {
+		return false
+	}
+	if s.Token == "***" {
+		return true
+	}
+	for _, value := range s.Env {
+		if value == "***" {
+			return true
+		}
+	}
+	return false
+}
+
 func (s *Server) processServerParams(oldServer *Server) {
 	if oldServer == nil {
 		return

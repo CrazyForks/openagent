@@ -169,6 +169,12 @@ func (c *ApiController) GetChats() {
 		return
 	}
 
+	chats, err = c.filterStoreAdminChats(chats)
+	if err != nil {
+		c.ResponseError(err.Error())
+		return
+	}
+
 	// Filter by time range if specified
 	if startTime != "" || endTime != "" {
 		chats = object.FilterChatsByTimeRange(chats, startTime, endTime)
@@ -197,12 +203,8 @@ func (c *ApiController) GetChatStatus() {
 		return
 	}
 
-	if !c.IsAdmin() {
-		username := c.GetSessionUsername()
-		if username != chat.User {
-			c.ResponseError(c.T("auth:Unauthorized operation"))
-			return
-		}
+	if !c.requireUserDataAccess(chat.User, chat.Store) {
+		return
 	}
 
 	c.ResponseOk(map[string]bool{
@@ -233,12 +235,8 @@ func (c *ApiController) GetChat() {
 	}
 
 	// Check if user has permission to view this chat
-	if !c.IsAdmin() {
-		username := c.GetSessionUsername()
-		if username != chat.User {
-			c.ResponseError(c.T("auth:Unauthorized operation"))
-			return
-		}
+	if !c.requireUserDataAccess(chat.User, chat.Store) {
+		return
 	}
 
 	c.ResponseOk(chat)
@@ -276,7 +274,7 @@ func (c *ApiController) UpdateChat() {
 		return
 	}
 
-	ok := c.IsCurrentUser(originalChat.User)
+	ok := c.requireUserDataAccess(originalChat.User, originalChat.Store)
 	if !ok {
 		return
 	}
@@ -315,7 +313,7 @@ func (c *ApiController) AddChat() {
 		return
 	}
 
-	ok := c.IsCurrentUser(chat.User)
+	ok := c.requireUserDataAccess(chat.User, chat.Store)
 	if !ok {
 		return
 	}
@@ -381,15 +379,11 @@ func (c *ApiController) DeleteChat() {
 		c.ResponseError(fmt.Sprintf("The chat: %s is not found", chat.GetId()))
 		return
 	}
-	if persistedChat.IsApiLog() {
-		if !c.RequireAdmin() {
-			return
-		}
-	} else {
-		ok := c.IsCurrentUser(persistedChat.User)
-		if !ok {
-			return
-		}
+	if persistedChat.IsApiLog() && !c.RequireAdmin() {
+		return
+	}
+	if !c.requireUserDataAccess(persistedChat.User, persistedChat.Store) {
+		return
 	}
 
 	success, err := object.DeleteChat(persistedChat)

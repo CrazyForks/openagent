@@ -47,6 +47,7 @@ func (c *ApiController) GetRecords() {
 			return
 		}
 
+		object.RedactRecordSecrets(records...)
 		c.ResponseOk(records)
 	} else {
 		limit, err := util.ParseIntWithError(limit)
@@ -68,6 +69,7 @@ func (c *ApiController) GetRecords() {
 			return
 		}
 
+		object.RedactRecordSecrets(records...)
 		c.ResponseOk(records, paginator.Nums())
 	}
 }
@@ -88,6 +90,7 @@ func (c *ApiController) GetRecord() {
 		return
 	}
 
+	object.RedactRecordSecrets(record)
 	c.ResponseOk(record)
 }
 

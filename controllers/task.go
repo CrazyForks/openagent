@@ -172,6 +172,9 @@ func (c *ApiController) UpdateTask() {
 		// Non-admins cannot move a task to another owner or rename its key.
 		task.Owner = existingTask.Owner
 		task.Name = existingTask.Name
+		// The document URL is set by upload-task-document and rendered as a link to admins, so a
+		// user must not be able to swap in an arbitrary (e.g. javascript:) URL.
+		task.DocumentUrl = existingTask.DocumentUrl
 	}
 
 	success, err := object.UpdateTask(id, &task)
@@ -205,6 +208,7 @@ func (c *ApiController) AddTask() {
 
 	if !c.IsAdmin() {
 		task.Owner = username
+		task.DocumentUrl = ""
 	}
 
 	success, err := object.AddTask(&task)

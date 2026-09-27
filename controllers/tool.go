@@ -145,6 +145,9 @@ func (c *ApiController) UpdateTool() {
 	if !c.requireHighRiskToolPermission(&t, oldTool) {
 		return
 	}
+	if !c.requireSecretNotRedirected(t.KeepsMaskedSecretWithNewEndpoint(oldTool)) {
+		return
+	}
 
 	success, err := object.UpdateTool(id, &t)
 	if err != nil {
@@ -224,6 +227,14 @@ func (c *ApiController) TestTool() {
 	}
 
 	if !c.requireHighRiskToolPermission(&t) {
+		return
+	}
+	oldTool, err := object.GetTool(t.GetId())
+	if err != nil {
+		c.ResponseError(err.Error())
+		return
+	}
+	if !c.requireSecretNotRedirected(t.KeepsMaskedSecretWithNewEndpoint(oldTool)) {
 		return
 	}
 

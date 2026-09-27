@@ -636,6 +636,19 @@ func GetPaginationProviders(owner, storeName string, offset, limit int, field, v
 	return providers, nil
 }
 
+// KeepsMaskedSecretWithNewEndpoint reports whether p reuses a masked ("***") secret of providerDb
+// while changing where requests are sent, which would disclose that secret to the new endpoint.
+func (p *Provider) KeepsMaskedSecretWithNewEndpoint(providerDb *Provider) bool {
+	if providerDb == nil {
+		return false
+	}
+	if p.ClientSecret != "***" && p.UserKey != "***" && p.SignKey != "***" {
+		return false
+	}
+	return p.Type != providerDb.Type || p.ProviderUrl != providerDb.ProviderUrl || p.Domain != providerDb.Domain ||
+		p.Region != providerDb.Region || p.CompatibleProvider != providerDb.CompatibleProvider
+}
+
 func (p *Provider) processProviderParams(providerDb *Provider) {
 	if p.ClientSecret == "***" {
 		p.ClientSecret = providerDb.ClientSecret

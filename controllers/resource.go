@@ -176,10 +176,25 @@ func (c *ApiController) DeleteResource() {
 		return
 	}
 
-	var resource object.Resource
-	err := json.NewDecoder(c.Ctx.Request.Body).Decode(&resource)
+	var form object.Resource
+	err := json.NewDecoder(c.Ctx.Request.Body).Decode(&form)
 	if err != nil {
 		c.ResponseError(err.Error())
+		return
+	}
+
+	// Act on the stored resource: the request body could otherwise name any storage object to delete.
+	if form.Owner == "" || form.Name == "" {
+		c.ResponseError(c.T("application:Missing required parameters"))
+		return
+	}
+	resource, err := object.GetResource(util.GetIdFromOwnerAndName(form.Owner, form.Name))
+	if err != nil {
+		c.ResponseError(err.Error())
+		return
+	}
+	if resource == nil {
+		c.ResponseOk(false)
 		return
 	}
 
@@ -188,13 +203,13 @@ func (c *ApiController) DeleteResource() {
 		return
 	}
 
-	err = object.DeleteResourceFile(&resource, c.GetAcceptLanguage())
+	err = object.DeleteResourceFile(resource, c.GetAcceptLanguage())
 	if err != nil {
 		c.ResponseError(err.Error())
 		return
 	}
 
-	success, err := object.DeleteResource(&resource)
+	success, err := object.DeleteResource(resource)
 	if err != nil {
 		c.ResponseError(err.Error())
 		return

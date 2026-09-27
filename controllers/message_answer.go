@@ -50,7 +50,7 @@ func (c *ApiController) GetMessageAnswer() {
 		return
 	}
 	if message != nil {
-		ok := c.IsCurrentUser(message.User)
+		ok := c.requireUserDataAccess(message.User, message.Store)
 		if !ok {
 			return
 		}
@@ -85,7 +85,7 @@ func (c *ApiController) CancelMessageAnswer() {
 		c.ResponseError(fmt.Sprintf("The message: %s is not found", id))
 		return
 	}
-	ok := c.IsCurrentUser(message.User)
+	ok := c.requireUserDataAccess(message.User, message.Store)
 	if !ok {
 		return
 	}

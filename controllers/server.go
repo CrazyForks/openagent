@@ -131,6 +131,9 @@ func (c *ApiController) UpdateServer() {
 	if !c.requireHostCommandPermission(&server, oldServer) {
 		return
 	}
+	if !c.requireSecretNotRedirected(server.KeepsMaskedSecretWithNewEndpoint(oldServer)) {
+		return
+	}
 
 	success, err := object.UpdateServer(id, &server)
 	if err != nil {
@@ -212,6 +215,14 @@ func (c *ApiController) TestMcpServer() {
 	if !c.requireHostCommandPermission(&server) {
 		return
 	}
+	oldServer, err := object.GetServer(server.GetId())
+	if err != nil {
+		c.ResponseError(err.Error())
+		return
+	}
+	if !c.requireSecretNotRedirected(server.KeepsMaskedSecretWithNewEndpoint(oldServer)) {
+		return
+	}
 
 	result, err := object.TestMcpServer(&server, c.GetAcceptLanguage())
 	if err != nil {
@@ -242,6 +253,14 @@ func (c *ApiController) SyncMcpTool() {
 	}
 
 	if !c.requireHostCommandPermission(&server) {
+		return
+	}
+	oldServer, err := object.GetServer(id)
+	if err != nil {
+		c.ResponseError(err.Error())
+		return
+	}
+	if !c.requireSecretNotRedirected(server.KeepsMaskedSecretWithNewEndpoint(oldServer)) {
 		return
 	}
 

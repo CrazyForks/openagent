@@ -38,6 +38,31 @@ func (c *ApiController) requireStoreAdminOwnership(storeOwner string) bool {
 	return true
 }
 
+// requireStoreNameOwnership is requireStoreAdminOwnership for callers that only know the store name.
+func (c *ApiController) requireStoreNameOwnership(storeName string) bool {
+	if c.IsGlobalAdmin() || !c.IsStoreAdmin() || storeName == "" {
+		return true
+	}
+	storeNames, err := getStoreNamesForUser(c.GetSessionUsername())
+	if err != nil {
+		c.ResponseError(err.Error())
+		return false
+	}
+	if !util.InSlice(storeNames, storeName) {
+		c.ResponseError(c.T("auth:Unauthorized operation"))
+		return false
+	}
+	return true
+}
+
+func (c *ApiController) canViewStoreFiles(store *object.Store) bool {
+	if c.IsGlobalAdmin() || store.PublishState == "Published" {
+		return true
+	}
+	username := c.GetSessionUsername()
+	return username != "" && username == store.Owner && store.Owner != "admin"
+}
+
 // GetHubStores
 // @Title GetHubStores
 // @Tag Store API
@@ -195,12 +220,16 @@ func (c *ApiController) GetStore() {
 			return
 		}
 
-		host := c.Ctx.Request.Host
-		origin := getOriginFromHost(host)
-		err = store.Populate(origin, c.GetAcceptLanguage())
-		if err != nil {
-			c.ResponseOk(object.GetMaskedStore(store, c.GetSessionUser()), err.Error())
-			return
+		// The file tree lists the store's knowledge files with their download URLs, so only the
+		// owner, the global admin and visitors of a published store may see it.
+		if c.canViewStoreFiles(store) {
+			host := c.Ctx.Request.Host
+			origin := getOriginFromHost(host)
+			err = store.Populate(origin, c.GetAcceptLanguage())
+			if err != nil {
+				c.ResponseOk(object.GetMaskedStore(store, c.GetSessionUser()), err.Error())
+				return
+			}
 		}
 	}
 

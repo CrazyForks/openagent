@@ -48,7 +48,7 @@ func (c *ApiController) GenerateTextToSpeechAudio() {
 		return
 	}
 	// Reading an existing message aloud discloses its text, so it is limited to the message's own user.
-	if req.MessageId != "" && !c.IsCurrentUser(message.User) {
+	if req.MessageId != "" && !c.requireUserDataAccess(message.User, message.Store) {
 		return
 	}
 
@@ -92,7 +92,7 @@ func (c *ApiController) GenerateTextToSpeechAudioStream() {
 		c.ResponseErrorStream(message, err.Error())
 		return
 	}
-	if !c.IsAdmin() && c.GetSessionUsername() != message.User {
+	if !c.canAccessUserData(message.User, message.Store) {
 		c.ResponseErrorStream(message, c.T("auth:Unauthorized operation"))
 		return
 	}

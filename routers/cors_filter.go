@@ -82,6 +82,7 @@ func CorsFilter(ctx *context.Context) {
 	if !ok {
 		ctx.ResponseWriter.WriteHeader(http.StatusForbidden)
 		responseError(ctx, fmt.Sprintf("CORS error: origin [%s] is not allowed, path: %s", origin, ctx.Request.URL.Path))
+		return
 	}
 
 	if object.OpenAgentHost == "" {

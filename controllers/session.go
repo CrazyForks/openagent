@@ -30,6 +30,11 @@ import (
 // @Success 200 {array} string The Response object
 // @router /get-sessions [get]
 func (c *ApiController) GetSessions() {
+	// Sessions hold live session IDs, which would let the reader take over any account.
+	if !c.RequireGlobalAdmin() {
+		return
+	}
+
 	limit := c.Input().Get("pageSize")
 	page := c.Input().Get("p")
 	field := c.Input().Get("field")
@@ -72,6 +77,11 @@ func (c *ApiController) GetSessions() {
 // @Success 200 {array} string The Response object
 // @router /get-session [get]
 func (c *ApiController) GetSingleSession() {
+	// Sessions hold live session IDs, which would let the reader take over any account.
+	if !c.RequireGlobalAdmin() {
+		return
+	}
+
 	id := c.Input().Get("sessionId")
 
 	session, err := object.GetSession(id)
@@ -91,6 +101,11 @@ func (c *ApiController) GetSingleSession() {
 // @Success 200 {array} string The Response object
 // @router /update-session [post]
 func (c *ApiController) UpdateSession() {
+	// Sessions hold live session IDs, which would let the reader take over any account.
+	if !c.RequireGlobalAdmin() {
+		return
+	}
+
 	var session object.Session
 	err := json.Unmarshal(c.Ctx.Input.RequestBody, &session)
 	if err != nil {
@@ -111,6 +126,11 @@ func (c *ApiController) UpdateSession() {
 // @Success 200 {array} string The Response object
 // @router /add-session [post]
 func (c *ApiController) AddSession() {
+	// Sessions hold live session IDs, which would let the reader take over any account.
+	if !c.RequireGlobalAdmin() {
+		return
+	}
+
 	var session object.Session
 	err := json.Unmarshal(c.Ctx.Input.RequestBody, &session)
 	if err != nil {
@@ -130,6 +150,11 @@ func (c *ApiController) AddSession() {
 // @Success 200 {array} string The Response object
 // @router /delete-session [post]
 func (c *ApiController) DeleteSession() {
+	// Sessions hold live session IDs, which would let the reader take over any account.
+	if !c.RequireGlobalAdmin() {
+		return
+	}
+
 	var session object.Session
 	err := json.Unmarshal(c.Ctx.Input.RequestBody, &session)
 	if err != nil {

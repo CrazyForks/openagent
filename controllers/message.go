@@ -217,6 +217,11 @@ func (c *ApiController) GetMessages() {
 			c.ResponseError(err.Error())
 			return
 		}
+		messages, err = c.filterStoreAdminMessages(messages)
+		if err != nil {
+			c.ResponseError(err.Error())
+			return
+		}
 		if err = object.PopulateMessagesReadOnly(messages); err != nil {
 			c.ResponseError(err.Error())
 			return
@@ -226,6 +231,11 @@ func (c *ApiController) GetMessages() {
 	}
 
 	messages, err := object.GetChatMessages(chat)
+	if err != nil {
+		c.ResponseError(err.Error())
+		return
+	}
+	messages, err = c.filterStoreAdminMessages(messages)
 	if err != nil {
 		c.ResponseError(err.Error())
 		return
@@ -264,12 +274,8 @@ func (c *ApiController) GetMessage() {
 	}
 
 	// Check if user has permission to view this message
-	if !c.IsAdmin() {
-		username := c.GetSessionUsername()
-		if username != message.User {
-			c.ResponseError(c.T("auth:Unauthorized operation"))
-			return
-		}
+	if !c.requireUserDataAccess(message.User, message.Store) {
+		return
 	}
 
 	c.ResponseOk(message)
@@ -307,7 +313,7 @@ func (c *ApiController) UpdateMessage() {
 		return
 	}
 
-	ok := c.IsCurrentUser(persistedMessage.User)
+	ok := c.requireUserDataAccess(persistedMessage.User, persistedMessage.Store)
 	if !ok {
 		return
 	}
@@ -358,7 +364,7 @@ func (c *ApiController) AddMessage() {
 
 	var chat *object.Chat
 	if originMessage != nil {
-		if !c.IsCurrentUser(originMessage.User) {
+		if !c.requireUserDataAccess(originMessage.User, originMessage.Store) {
 			return
 		}
 		var mutable bool
@@ -368,7 +374,7 @@ func (c *ApiController) AddMessage() {
 		}
 		preserveMessageOwnership(&message, originMessage)
 	} else {
-		if !c.IsCurrentUser(message.User) {
+		if !c.requireUserDataAccess(message.User, message.Store) {
 			return
 		}
 		if message.Chat != "" {
@@ -379,6 +385,9 @@ func (c *ApiController) AddMessage() {
 			}
 			if !c.IsAdmin() && chat.User != message.User {
 				c.ResponseError(c.T("auth:Unauthorized operation"))
+				return
+			}
+			if !c.requireUserDataAccess(chat.User, chat.Store) {
 				return
 			}
 		}
@@ -564,6 +573,9 @@ func (c *ApiController) DeleteMessage() {
 		c.ResponseError("Message not found")
 		return
 	}
+	if !c.requireUserDataAccess(persistedMessage.User, persistedMessage.Store) {
+		return
+	}
 	if _, ok := c.ensureMessageMutable(persistedMessage); !ok {
 		return
 	}
@@ -589,6 +601,10 @@ func (c *ApiController) DeleteWelcomeMessage() {
 	message, err = object.GetMessage(id)
 	if err != nil {
 		c.ResponseError(err.Error())
+		return
+	}
+	if message == nil {
+		c.ResponseError("Message not found")
 		return
 	}
 

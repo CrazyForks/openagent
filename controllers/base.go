@@ -24,6 +24,7 @@ import (
 	"github.com/beego/beego/logs"
 	"github.com/the-open-agent/openagent/auth"
 	"github.com/the-open-agent/openagent/object"
+	"github.com/the-open-agent/openagent/util"
 )
 
 type ApiController struct {
@@ -164,6 +165,81 @@ func getStoreNamesForUser(username string) ([]string, error) {
 // narrowStoreAdminStoreNames applies optional ?store= filter for store-level admins.
 // If requestedStore is empty, returns allowed unchanged. If non-empty, returns that store
 // only when it exists in allowed; otherwise ok is false.
+// canAccessUserData reports whether the session user may access data that user created in store.
+// Regular users only reach their own data and the global admin reaches everything, while a store
+// admin reaches their own data plus the data in the stores they own.
+func (c *ApiController) canAccessUserData(user string, store string) bool {
+	if c.IsGlobalAdmin() {
+		return true
+	}
+	username := c.GetSessionUsername()
+	if username == user {
+		return true
+	}
+	if !c.IsStoreAdmin() || store == "" {
+		return false
+	}
+
+	storeNames, err := getStoreNamesForUser(username)
+	if err != nil {
+		return false
+	}
+	for _, name := range storeNames {
+		if name == store {
+			return true
+		}
+	}
+	return false
+}
+
+func (c *ApiController) requireUserDataAccess(user string, store string) bool {
+	if !c.canAccessUserData(user, store) {
+		c.ResponseError(c.T("auth:Unauthorized operation"))
+		return false
+	}
+	return true
+}
+
+// filterStoreAdminChats limits a store admin to their own chats and the chats in stores they own.
+func (c *ApiController) filterStoreAdminChats(chats []*object.Chat) ([]*object.Chat, error) {
+	if c.IsGlobalAdmin() || !c.IsStoreAdmin() {
+		return chats, nil
+	}
+
+	username := c.GetSessionUsername()
+	storeNames, err := getStoreNamesForUser(username)
+	if err != nil {
+		return nil, err
+	}
+	res := []*object.Chat{}
+	for _, chat := range chats {
+		if chat.User == username || util.InSlice(storeNames, chat.Store) {
+			res = append(res, chat)
+		}
+	}
+	return res, nil
+}
+
+// filterStoreAdminMessages limits a store admin to their own messages and the messages in stores they own.
+func (c *ApiController) filterStoreAdminMessages(messages []*object.Message) ([]*object.Message, error) {
+	if c.IsGlobalAdmin() || !c.IsStoreAdmin() {
+		return messages, nil
+	}
+
+	username := c.GetSessionUsername()
+	storeNames, err := getStoreNamesForUser(username)
+	if err != nil {
+		return nil, err
+	}
+	res := []*object.Message{}
+	for _, message := range messages {
+		if message.User == username || util.InSlice(storeNames, message.Store) {
+			res = append(res, message)
+		}
+	}
+	return res, nil
+}
+
 func narrowStoreAdminStoreNames(allowed []string, requestedStore string) ([]string, bool) {
 	if requestedStore == "" {
 		return allowed, true
@@ -226,9 +302,9 @@ func (c *ApiController) errorLogFilter() {
 			path := c.Ctx.Input.URL()
 			query := ""
 			if c.Ctx.Request != nil && c.Ctx.Request.URL != nil {
-				query = c.Ctx.Request.URL.RawQuery
+				query = util.RedactSensitiveUrl("?" + c.Ctx.Request.URL.RawQuery)[1:]
 			}
-			body := string(c.Ctx.Input.RequestBody)
+			body := util.RedactSensitiveJson(string(c.Ctx.Input.RequestBody))
 			if len(body) > 4096 {
 				body = body[:4096] + "...(truncated)"
 			}

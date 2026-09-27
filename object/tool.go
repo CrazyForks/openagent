@@ -228,6 +228,15 @@ func DeleteTool(t *Tool) (bool, error) {
 	return affected != 0, nil
 }
 
+// KeepsMaskedSecretWithNewEndpoint reports whether t reuses the masked ("***") client secret of
+// oldTool while changing where the tool sends it.
+func (t *Tool) KeepsMaskedSecretWithNewEndpoint(oldTool *Tool) bool {
+	if oldTool == nil || t.ClientSecret != "***" {
+		return false
+	}
+	return t.Type != oldTool.Type || t.ProviderUrl != oldTool.ProviderUrl
+}
+
 func getToolConfig(t *Tool) tool.Config {
 	return tool.Config{
 		Type:         t.Type,

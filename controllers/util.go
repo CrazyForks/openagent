@@ -136,6 +136,16 @@ func (c *ApiController) RequireGlobalAdmin() bool {
 	return true
 }
 
+// requireSecretNotRedirected rejects a non-global admin's request that reuses a masked secret while
+// changing where it is sent, since that would hand them a secret they are not allowed to read.
+func (c *ApiController) requireSecretNotRedirected(redirected bool) bool {
+	if redirected && !c.IsGlobalAdmin() {
+		c.ResponseError(c.T("controllers:Please re-enter the secret when changing where it is sent"))
+		return false
+	}
+	return true
+}
+
 func (c *ApiController) IsAdmin() bool {
 	user := c.GetSessionUser()
 	return util.IsAdmin(user)
