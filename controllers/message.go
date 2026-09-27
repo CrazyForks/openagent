@@ -169,6 +169,48 @@ func (c *ApiController) GetMessages() {
 		return
 	}
 
+	if !c.IsAdmin() {
+		// Non-admins may only read their own messages. An empty user would match every
+		// message, so it is never used as a filter for them.
+		user = c.GetSessionUsername()
+		if chat == "" {
+			if user == "" {
+				c.ResponseOk([]*object.Message{})
+				return
+			}
+		} else {
+			chatObj, err := object.GetChat(util.GetId("admin", chat))
+			if err != nil {
+				c.ResponseError(err.Error())
+				return
+			}
+			if chatObj != nil && chatObj.User != user {
+				c.ResponseError(c.T("auth:Unauthorized operation"))
+				return
+			}
+		}
+	}
+
+	if chat != "" && !c.IsAdmin() {
+		messages, err := object.GetChatMessages(chat)
+		if err != nil {
+			c.ResponseError(err.Error())
+			return
+		}
+		ownMessages := []*object.Message{}
+		for _, message := range messages {
+			if message.User == user {
+				ownMessages = append(ownMessages, message)
+			}
+		}
+		if err = object.PopulateMessagesReadOnly(ownMessages); err != nil {
+			c.ResponseError(err.Error())
+			return
+		}
+		c.ResponseOk(ownMessages)
+		return
+	}
+
 	if chat == "" {
 		messages, err := object.GetMessages("admin", user, "")
 		if err != nil {
@@ -333,6 +375,10 @@ func (c *ApiController) AddMessage() {
 			var mutable bool
 			chat, mutable = c.ensureMessageMutable(&message)
 			if !mutable {
+				return
+			}
+			if !c.IsAdmin() && chat.User != message.User {
+				c.ResponseError(c.T("auth:Unauthorized operation"))
 				return
 			}
 		}

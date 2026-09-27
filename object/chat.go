@@ -241,7 +241,7 @@ func getPaginationChatsByMessages(owner string, offset, limit int, value, sortFi
 		Where("message.text LIKE ?", fmt.Sprintf("%%%s%%", value))
 
 	// Handle sorting
-	if sortField == "" || sortOrder == "" {
+	if sortField == "" || sortOrder == "" || !util.FilterSortField(sortField) {
 		sortField = "created_time"
 	}
 	if sortOrder == "ascend" {

@@ -48,7 +48,7 @@ func GetDbSession(owner string, offset, limit int, field, value, sortField, sort
 			session = session.And(fmt.Sprintf("%s like ?", util.SnakeString(field)), fmt.Sprintf("%%%s%%", value))
 		}
 	}
-	if sortField == "" || sortOrder == "" {
+	if sortField == "" || sortOrder == "" || !util.FilterSortField(sortField) {
 		sortField = "created_time"
 	}
 	if sortOrder == "ascend" {

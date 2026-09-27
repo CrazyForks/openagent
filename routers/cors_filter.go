@@ -113,7 +113,8 @@ func isOriginAllowed(origin string) (bool, error) {
 			continue
 		}
 		allowedOrigin := parsedUrl.Scheme + "://" + parsedUrl.Host
-		if origin == allowedOrigin || strings.Contains(origin, allowedOrigin) {
+		// Exact match only: a substring check would accept e.g. "https://app.com.evil.com".
+		if strings.EqualFold(origin, allowedOrigin) {
 			return true, nil
 		}
 	}

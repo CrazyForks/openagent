@@ -90,10 +90,6 @@ p, anonymous, *, /api/delete-task
 p, anonymous, *, /api/upload-task-document
 p, anonymous, *, /api/start-connection
 p, anonymous, *, /api/stop-connection
-p, anonymous, *, /api/commit-record
-p, anonymous, *, /api/commit-record-second
-p, anonymous, *, /api/query-record
-p, anonymous, *, /api/query-record-second
 p, anonymous, *, /api/generate-text-to-speech-audio
 p, anonymous, *, /api/generate-text-to-speech-audio-stream
 p, anonymous, *, /api/process-speech-to-text

@@ -597,7 +597,7 @@ func GetPaginationProviders(owner, storeName string, offset, limit int, field, v
 		}
 		// Apply same sort order to remote providers
 		sortFieldToUse := sortField
-		if sortFieldToUse == "" {
+		if sortFieldToUse == "" || !util.FilterSortField(sortFieldToUse) {
 			sortFieldToUse = "created_time"
 		}
 		if sortOrder == "ascend" {

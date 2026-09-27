@@ -95,6 +95,7 @@ func StaticFilter(ctx *context.Context) {
 			http.NotFound(ctx.ResponseWriter, ctx.Request)
 			return
 		}
+		setStorageFileSecurityHeaders(ctx, urlPath)
 		makeGzipResponse(ctx.ResponseWriter, ctx.Request, urlPath)
 		return
 	}
@@ -131,6 +132,29 @@ func StaticFilter(ctx *context.Context) {
 			ctx.ResponseWriter.WriteHeader(http.StatusNotFound)
 			_, _ = fmt.Fprint(ctx.ResponseWriter, `<!DOCTYPE html><html><head><title>Frontend Not Built</title></head><body><h2>Frontend not built</h2><p>Please run <code>cd web &amp;&amp; yarn install &amp;&amp; yarn build</code> to build the frontend.</p></body></html>`)
 		}
+	}
+}
+
+// activeStorageFileExts are file types a browser can execute script in when opened directly.
+var activeStorageFileExts = map[string]bool{
+	".html":  true,
+	".htm":   true,
+	".xhtml": true,
+	".shtml": true,
+	".svg":   true,
+	".svgz":  true,
+	".xml":   true,
+	".xsl":   true,
+	".js":    true,
+	".mjs":   true,
+}
+
+// setStorageFileSecurityHeaders stops user-uploaded files from running script on this origin,
+// which would otherwise let an uploaded HTML/SVG file act with the viewer's session.
+func setStorageFileSecurityHeaders(ctx *context.Context, path string) {
+	ctx.Output.Header("X-Content-Type-Options", "nosniff")
+	if activeStorageFileExts[strings.ToLower(filepath.Ext(path))] {
+		ctx.Output.Header("Content-Security-Policy", "sandbox")
 	}
 }
 

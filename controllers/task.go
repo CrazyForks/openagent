@@ -64,11 +64,13 @@ func (c *ApiController) GetTasks() {
 		owner = ""
 	}
 
-	// For non-admins, filter by their username
+	// Non-admins may only list their own tasks. An empty owner would match every task,
+	// so anonymous callers get nothing.
 	if !c.IsAdmin() {
-		username := c.GetSessionUsername()
-		if username != "" {
-			owner = username
+		owner = c.GetSessionUsername()
+		if owner == "" {
+			c.ResponseOk([]*object.Task{})
+			return
 		}
 	}
 
@@ -123,7 +125,7 @@ func (c *ApiController) GetTask() {
 	// Check ownership for non-admins
 	if !c.IsAdmin() {
 		username := c.GetSessionUsername()
-		if task.Owner != username {
+		if username == "" || task.Owner != username {
 			c.ResponseError(c.T("auth:Unauthorized operation"))
 			return
 		}
@@ -163,10 +165,13 @@ func (c *ApiController) UpdateTask() {
 	// Check ownership for non-admins
 	if !c.IsAdmin() {
 		username := c.GetSessionUsername()
-		if existingTask.Owner != username {
+		if username == "" || existingTask.Owner != username {
 			c.ResponseError(c.T("auth:Unauthorized operation"))
 			return
 		}
+		// Non-admins cannot move a task to another owner or rename its key.
+		task.Owner = existingTask.Owner
+		task.Name = existingTask.Name
 	}
 
 	success, err := object.UpdateTask(id, &task)
@@ -186,11 +191,20 @@ func (c *ApiController) UpdateTask() {
 // @Success 200 {object} controllers.Response The Response object
 // @router /add-task [post]
 func (c *ApiController) AddTask() {
+	username, ok := c.RequireSignedIn()
+	if !ok {
+		return
+	}
+
 	var task object.Task
 	err := json.Unmarshal(c.Ctx.Input.RequestBody, &task)
 	if err != nil {
 		c.ResponseError(err.Error())
 		return
+	}
+
+	if !c.IsAdmin() {
+		task.Owner = username
 	}
 
 	success, err := object.AddTask(&task)
@@ -231,7 +245,7 @@ func (c *ApiController) DeleteTask() {
 			c.ResponseError(c.T("general:The task does not exist"))
 			return
 		}
-		if existingTask.Owner != username {
+		if username == "" || existingTask.Owner != username {
 			c.ResponseError(c.T("auth:Unauthorized operation"))
 			return
 		}
@@ -270,7 +284,7 @@ func (c *ApiController) AnalyzeTask() {
 
 	if !c.IsAdmin() {
 		username := c.GetSessionUsername()
-		if task.Owner != username {
+		if username == "" || task.Owner != username {
 			logs.Warn("[analyze-task] forbidden id=%s taskOwner=%s user=%s", id, task.Owner, username)
 			c.ResponseError(c.T("auth:Unauthorized operation"))
 			return

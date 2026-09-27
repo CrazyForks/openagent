@@ -232,7 +232,11 @@ func (c *ApiController) errorLogFilter() {
 			if len(body) > 4096 {
 				body = body[:4096] + "...(truncated)"
 			}
-			token := c.Ctx.Request.Header.Get("Authorization")
+			// Never write credentials to the log; only record whether one was sent.
+			token := ""
+			if c.Ctx.Request.Header.Get("Authorization") != "" {
+				token = "<redacted>"
+			}
 			respJSON, _ := json.Marshal(v)
 			respStr := string(respJSON)
 			if len(respStr) > 4096 {

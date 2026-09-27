@@ -60,7 +60,9 @@ func (c *ApiController) GetMessageAnswer() {
 	c.Ctx.ResponseWriter.Header().Set("Cache-Control", "no-cache")
 	c.Ctx.ResponseWriter.Header().Set("Connection", "keep-alive")
 
-	job := messageAnswerJobs.getOrStart(id, c.Ctx.Request.Host, c.GetAcceptLanguage(), signedIn, signedIn)
+	// Any user can point a chat at any store, so tools that run commands or touch the local
+	// machine are only enabled for admins, never merely for being signed in.
+	job := messageAnswerJobs.getOrStart(id, c.Ctx.Request.Host, c.GetAcceptLanguage(), signedIn, c.IsAdmin())
 	streamMessageAnswerJob(c.Ctx.ResponseWriter, c.Ctx.Request, job)
 }
 
@@ -94,7 +96,7 @@ func (c *ApiController) CancelMessageAnswer() {
 
 func (c *ApiController) generateMessageAnswer(id string, responseWriter http.ResponseWriter, host string) {
 	_, signedIn := c.CheckSignedIn()
-	generateMessageAnswer(id, responseWriter, host, c.GetAcceptLanguage(), signedIn, signedIn, c.ResponseError)
+	generateMessageAnswer(id, responseWriter, host, c.GetAcceptLanguage(), signedIn, c.IsAdmin(), c.ResponseError)
 }
 
 func streamMessageAnswerJob(responseWriter http.ResponseWriter, request *http.Request, job *messageAnswerJob) {

@@ -189,7 +189,10 @@ func GetMaskedStore(store *Store, user *auth.User) *Store {
 
 	NormalizeEmbeddedStoreAssets(store)
 
-	if store.ExternalApiKey != "" && !util.IsGlobalAdmin(user) && (user == nil || user.Name != store.Owner) {
+	// Built-in stores are owned by "admin"; a non-admin account that happens to be named "admin"
+	// (e.g. in another Casdoor organization) must not be treated as their owner.
+	isOwner := user != nil && user.Name == store.Owner && store.Owner != "admin"
+	if store.ExternalApiKey != "" && !util.IsGlobalAdmin(user) && !isOwner {
 		store.ExternalApiKey = "***"
 	}
 

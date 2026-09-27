@@ -139,6 +139,17 @@ func (c *ApiController) GetChats() {
 		return
 	}
 
+	if !c.IsAdmin() {
+		// Non-admins may only list their own chats. An empty user would match every chat,
+		// so anonymous callers get nothing.
+		user = c.GetSessionUsername()
+		if user == "" {
+			c.ResponseOk([]*object.Chat{})
+			return
+		}
+		field = ""
+	}
+
 	// Apply store isolation based on user's Homepage field
 	var ok bool
 	storeName, ok = c.EnforceStoreIsolation(storeName)
