@@ -284,6 +284,11 @@ func ensurePipeChat(pipeObj *object.Pipe, incoming *pipepkg.IncomingMessage) (*o
 	if err != nil {
 		return nil, err
 	}
+	// Users choose their own chat names, so a chat with this name that the pipe did not create
+	// (its user is the chat name) must not receive the pipe's messages.
+	if chat != nil && chat.User != chatName {
+		return nil, fmt.Errorf("the chat: %s is not a pipe chat", chatId)
+	}
 	if chat != nil {
 		if pipeObj.Store != "" && chat.Store != pipeObj.Store {
 			chat.Store = pipeObj.Store

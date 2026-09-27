@@ -65,7 +65,6 @@ p, anonymous, *, /api/delete-welcome-message
 p, anonymous, *, /api/get-message-answer
 p, anonymous, *, /api/cancel-message-answer
 p, anonymous, *, /api/get-answer
-p, anonymous, *, /api/get-storage-providers
 p, anonymous, *, /api/get-store
 p, anonymous, *, /api/get-vector
 p, anonymous, *, /api/get-providers

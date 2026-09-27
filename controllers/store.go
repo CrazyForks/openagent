@@ -528,10 +528,22 @@ func (c *ApiController) ClaimStore() {
 // @Success 200 {object} controllers.Response The Response object
 // @router /refresh-store-vectors [post]
 func (c *ApiController) RefreshStoreVectors() {
-	var store object.Store
-	err := json.Unmarshal(c.Ctx.Input.RequestBody, &store)
+	var form object.Store
+	err := json.Unmarshal(c.Ctx.Input.RequestBody, &form)
 	if err != nil {
 		c.ResponseError(err.Error())
+		return
+	}
+
+	// Use the stored configuration: the request body could otherwise point the refresh at another
+	// store's storage provider and pull its files into this store's knowledge base.
+	store, err := object.GetStore(form.GetId())
+	if err != nil {
+		c.ResponseError(err.Error())
+		return
+	}
+	if store == nil {
+		c.ResponseError(fmt.Sprintf("store: %s not found", form.GetId()))
 		return
 	}
 
@@ -539,7 +551,7 @@ func (c *ApiController) RefreshStoreVectors() {
 		return
 	}
 
-	ok, err := object.RefreshStoreVectors(&store, c.GetAcceptLanguage())
+	ok, err := object.RefreshStoreVectors(store, c.GetAcceptLanguage())
 	if err != nil {
 		c.ResponseError(err.Error())
 		return

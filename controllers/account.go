@@ -32,10 +32,7 @@ func init() {
 }
 
 func tryInitAuthConfig() error {
-	issuer := conf.GetConfigString("issuer")
-	if issuer == "" {
-		issuer = conf.GetConfigString("casdoorEndpoint") // backward compat
-	}
+	issuer := conf.GetIssuer()
 	clientId := conf.GetConfigString("clientId")
 	clientSecret := conf.GetConfigString("clientSecret")
 	casdoorOrganization := conf.GetConfigString("casdoorOrganization") // casdoor backward compat
@@ -65,10 +62,7 @@ func tryInitAuthConfig() error {
 }
 
 func InitAuthConfig() {
-	issuer := conf.GetConfigString("issuer")
-	if issuer == "" {
-		issuer = conf.GetConfigString("casdoorEndpoint") // backward compat
-	}
+	issuer := conf.GetIssuer()
 	if issuer == "" {
 		conf.SetCasdoorAvailable(false)
 		return

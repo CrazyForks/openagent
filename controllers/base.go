@@ -173,6 +173,10 @@ func (c *ApiController) canAccessUserData(user string, store string) bool {
 		return true
 	}
 	username := c.GetSessionUsername()
+	// Without a session the username is empty, which must not match data whose user is empty.
+	if username == "" {
+		return false
+	}
 	if username == user {
 		return true
 	}

@@ -259,6 +259,11 @@ func generateMessageAnswer(id string, responseWriter http.ResponseWriter, host s
 			responseErrorStream(message, fmt.Sprintf("The message: %s is not found", id))
 			return
 		}
+		// Only answer a question from the same chat, never another user's message.
+		if questionMessage.Owner != message.Owner || questionMessage.Chat != message.Chat {
+			responseErrorStream(message, fmt.Sprintf("The message: %s is not found", id))
+			return
+		}
 
 		question = questionMessage.Text
 	}
@@ -678,6 +683,10 @@ func (c *ApiController) GetAnswer() {
 	chat, err := object.GetChat(util.GetId("admin", chatName))
 	if err != nil {
 		c.ResponseError(err.Error())
+		return
+	}
+	// The chat name comes from the request, so it may name another user's chat.
+	if chat != nil && !c.requireUserDataAccess(chat.User, chat.Store) {
 		return
 	}
 	if chat == nil {

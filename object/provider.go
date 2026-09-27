@@ -98,7 +98,8 @@ func GetMaskedProvider(provider *Provider, isMaskEnabled bool, user *auth.User) 
 		provider.ClientSecret = "***"
 	}
 
-	if !util.IsAdmin(user) {
+	// Store-level admins manage only their own stores, so they do not get the global providers' keys.
+	if !util.IsGlobalAdmin(user) {
 		if provider.ExternalApiKey != "" {
 			provider.ExternalApiKey = "***"
 		}
@@ -642,7 +643,7 @@ func (p *Provider) KeepsMaskedSecretWithNewEndpoint(providerDb *Provider) bool {
 	if providerDb == nil {
 		return false
 	}
-	if p.ClientSecret != "***" && p.UserKey != "***" && p.SignKey != "***" {
+	if p.ClientSecret != "***" && p.UserKey != "***" && p.SignKey != "***" && p.ConfigText != "***" {
 		return false
 	}
 	return p.Type != providerDb.Type || p.ProviderUrl != providerDb.ProviderUrl || p.Domain != providerDb.Domain ||
@@ -658,6 +659,12 @@ func (p *Provider) processProviderParams(providerDb *Provider) {
 	}
 	if p.SignKey == "***" {
 		p.SignKey = providerDb.SignKey
+	}
+	if p.ConfigText == "***" {
+		p.ConfigText = providerDb.ConfigText
+	}
+	if p.ExternalApiKey == "***" {
+		p.ExternalApiKey = providerDb.ExternalApiKey
 	}
 	if p.ExternalApiKey == "" && p.Category == "Model" {
 		p.ExternalApiKey = generateProviderKey()

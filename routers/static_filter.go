@@ -219,10 +219,7 @@ func serveFileWithReplace(w http.ResponseWriter, r *http.Request, path string) {
 	oldContent := util.ReadStringFromPath(path)
 	newContent := oldContent
 
-	issuer := conf.GetConfigString("issuer")
-	if issuer == "" {
-		issuer = conf.GetConfigString("casdoorEndpoint") // backward compat
-	}
+	issuer := conf.GetIssuer()
 	clientId := conf.GetConfigString("clientId")
 	appName := conf.GetConfigString("casdoorApplication")           // casdoor backward compat
 	organizationName := conf.GetConfigString("casdoorOrganization") // casdoor backward compat

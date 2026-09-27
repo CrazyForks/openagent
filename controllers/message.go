@@ -75,6 +75,11 @@ func (c *ApiController) GetGlobalMessages() {
 			c.ResponseError(err.Error())
 			return
 		}
+		messages, err = c.filterStoreAdminMessages(messages)
+		if err != nil {
+			c.ResponseError(err.Error())
+			return
+		}
 		if err = object.PopulateMessagesReadOnly(messages); err != nil {
 			c.ResponseError(err.Error())
 			return
@@ -318,6 +323,13 @@ func (c *ApiController) UpdateMessage() {
 		return
 	}
 	preserveMessageOwnership(&message, persistedMessage)
+	if !c.IsAdmin() {
+		// ReplyTo picks the question that an answer (and its notification email) is built from, so a
+		// user repointing it could read any other user's message; the notification is admin-only.
+		message.Author = persistedMessage.Author
+		message.ReplyTo = persistedMessage.ReplyTo
+		message.NeedNotify = false
+	}
 
 	if message.NeedNotify {
 		if conf.IsCasdoorAvailable() {

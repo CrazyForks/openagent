@@ -45,6 +45,11 @@ func (c *ApiController) GetGlobalChats() {
 			c.ResponseError(err.Error())
 			return
 		}
+		chats, err = c.filterStoreAdminChats(chats)
+		if err != nil {
+			c.ResponseError(err.Error())
+			return
+		}
 
 		c.ResponseOk(chats)
 	} else {
@@ -282,6 +287,12 @@ func (c *ApiController) UpdateChat() {
 	if !c.IsAdmin() {
 		// Binding a chat to a tool grants the agent that tool's capabilities, so only admins may change it.
 		chat.Tool = originalChat.Tool
+		// A user must not hand the chat to someone else (or to nobody) or rename its key.
+		chat.Owner = originalChat.Owner
+		chat.Name = originalChat.Name
+		chat.User = originalChat.User
+		chat.Organization = originalChat.Organization
+		chat.CreatedTime = originalChat.CreatedTime
 	}
 
 	if conf.IsDemoMode() {
@@ -320,6 +331,7 @@ func (c *ApiController) AddChat() {
 	if !c.IsAdmin() {
 		// Binding a chat to a tool grants the agent that tool's capabilities, so only admins may set it.
 		chat.Tool = ""
+		chat.Owner = "admin"
 	}
 
 	currentTime := util.GetCurrentTime()
